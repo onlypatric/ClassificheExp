@@ -4,6 +4,7 @@ main: it.patric.classificheexp.Main
 api-version: '1.21'
 authors: [Patric]
 description: Plugin leaderboard con MySQL primario e fallback YML.
+softdepend: [PlaceholderAPI]
 commands:
   leaderboard:
     description: Gestione classifiche

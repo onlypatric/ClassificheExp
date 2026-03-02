@@ -18,6 +18,9 @@ import it.patric.classificheexp.crossserver.service.RemoteApiFacade;
 import it.patric.classificheexp.crossserver.service.RemoteBridgeService;
 import it.patric.classificheexp.crossserver.transport.PendingRequestRegistry;
 import it.patric.classificheexp.crossserver.transport.ProxyMessagingTransport;
+import it.patric.classificheexp.integration.papi.ClassificheExpPlaceholderExpansion;
+import it.patric.classificheexp.integration.papi.PlaceholderHook;
+import it.patric.classificheexp.message.MessageService;
 import it.patric.classificheexp.persistence.StorageCoordinator;
 import it.patric.classificheexp.persistence.mysql.MySqlConnectionFactory;
 import it.patric.classificheexp.persistence.mysql.MySqlLeaderboardRepository;
@@ -55,6 +58,8 @@ public final class PluginBootstrap {
                             plugin.getLogger()
                     );
             LeaderboardApi leaderboardApi = new DefaultLeaderboardApi(leaderboardService);
+            MessageService messageService = new MessageService(plugin);
+            Optional<PlaceholderHook> papiExpansion = createPapiExpansion(plugin, config, leaderboardService);
             Optional<CrossServerRuntime> crossServerRuntime = createCrossServerRuntime(plugin, config, asyncExecutor, leaderboardService);
 
             PluginContext context = new PluginContext(
@@ -65,6 +70,8 @@ public final class PluginBootstrap {
                     storageCoordinator,
                     leaderboardService,
                     leaderboardApi,
+                    messageService,
+                    papiExpansion,
                     crossServerRuntime
             );
 
@@ -80,6 +87,7 @@ public final class PluginBootstrap {
             ));
             plugin.getLogger().info("Async executor inizializzato");
             plugin.getLogger().info("Leaderboard API inizializzata");
+            plugin.getLogger().info("PlaceholderAPI detected=" + plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI"));
             if (crossServerRuntime.isPresent()) {
                 plugin.getLogger().info("Cross-server runtime inizializzato");
             }
@@ -100,6 +108,33 @@ public final class PluginBootstrap {
             }
             throw ex;
         }
+    }
+
+    private Optional<PlaceholderHook> createPapiExpansion(
+            Main plugin,
+            PluginConfig config,
+            LeaderboardService leaderboardService
+    ) {
+        PluginConfig.PlaceholderConfig placeholderConfig = config.placeholders();
+        if (!placeholderConfig.enabled()) {
+            plugin.getLogger().info("event=papi_detected installed=false reason=disabled_by_config");
+            return Optional.empty();
+        }
+
+        boolean papiInstalled = plugin.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI");
+        plugin.getLogger().info("event=papi_detected installed=" + papiInstalled);
+        if (!papiInstalled) {
+            plugin.getLogger().info("event=papi_register success=false reason=plugin_missing");
+            return Optional.empty();
+        }
+
+        return Optional.of(new ClassificheExpPlaceholderExpansion(
+                plugin,
+                leaderboardService,
+                placeholderConfig,
+                new NameNormalizer(),
+                plugin.getLogger()
+        ));
     }
 
     private Optional<CrossServerRuntime> createCrossServerRuntime(

@@ -3,9 +3,13 @@ package it.patric.classificheexp.command;
 import it.patric.classificheexp.application.LeaderboardService;
 import it.patric.classificheexp.domain.LeaderboardEntry;
 import it.patric.classificheexp.domain.LeaderboardId;
+import it.patric.classificheexp.message.MessageService;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
@@ -19,6 +23,7 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -54,20 +59,20 @@ class LeaderboardCommandExecutorTest {
 
         when(sender.hasPermission(LeaderboardCommandExecutor.BASE_PERMISSION)).thenReturn(true);
 
-        executor = new LeaderboardCommandExecutor(service, logger, plugin);
+        executor = new LeaderboardCommandExecutor(service, logger, plugin, new MessageService(new YamlConfiguration()));
     }
 
     @Test
     void noArgsShouldShowUsage() {
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{}));
-        verify(sender).sendMessage("Uso: /leaderboard <add|remove|set|get|top>");
+        verifyMessageContains("Uso: /leaderboard");
     }
 
     @Test
     void unknownSubcommandShouldShowErrorAndUsage() {
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"foo"}));
-        verify(sender).sendMessage("Subcommand non valido.");
-        verify(sender).sendMessage("Uso: /leaderboard <add|remove|set|get|top>");
+        verifyMessageContains("Subcommand non valido");
+        verifyMessageContains("Uso: /leaderboard");
     }
 
     @Test
@@ -75,7 +80,7 @@ class LeaderboardCommandExecutorTest {
         when(sender.hasPermission(LeaderboardCommandExecutor.ADD_PERMISSION)).thenReturn(false);
 
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"add", "alpha", "5"}));
-        verify(sender).sendMessage("Non hai il permesso per usare add.");
+        verifyMessageContains("Non hai il permesso");
     }
 
     @Test
@@ -83,7 +88,7 @@ class LeaderboardCommandExecutorTest {
         when(sender.hasPermission(LeaderboardCommandExecutor.ADD_PERMISSION)).thenReturn(true);
 
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"add", "alpha", "abc"}));
-        verify(sender).sendMessage("Il valore points deve essere un intero > 0.");
+        verifyMessageContains("points deve essere un intero");
     }
 
     @Test
@@ -92,7 +97,7 @@ class LeaderboardCommandExecutorTest {
         when(service.getScore("alpha")).thenReturn(42);
 
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"get", "alpha"}));
-        verify(sender).sendMessage("Punteggio di alpha: 42");
+        verifyMessageContains("Punteggio di alpha: 42");
     }
 
     @Test
@@ -104,8 +109,10 @@ class LeaderboardCommandExecutorTest {
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"top"}));
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"top", "5"}));
 
-        verify(sender).sendMessage("1) alpha - 10");
-        verify(sender).sendMessage("1) beta - 8");
+        verifyMessageContains("Top 10");
+        verifyMessageContains("Top 5");
+        verifyMessageContains("1) alpha - 10");
+        verifyMessageContains("1) beta - 8");
     }
 
     @Test
@@ -116,7 +123,8 @@ class LeaderboardCommandExecutorTest {
 
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"add", "alpha", "5"}));
 
-        verify(sender).sendMessage("Aggiunti 5 punti a alpha. Totale: 15");
+        verifyMessageContains("Operazione in corso");
+        verifyMessageContains("Aggiunti 5 punti a alpha. Totale: 15");
     }
 
     @Test
@@ -126,7 +134,7 @@ class LeaderboardCommandExecutorTest {
 
         assertTrue(executor.onCommand(sender, command, "leaderboard", new String[]{"set", "alpha", "5"}));
 
-        verify(sender).sendMessage("Operazione fallita, controlla i log.");
+        verifyMessageContains("Operazione fallita");
         verify(logger).warning(contains("event=command_async_failed subcommand=set"));
     }
 
@@ -141,5 +149,14 @@ class LeaderboardCommandExecutorTest {
 
         verify(service).getTop(100);
         verify(service).getTop(1);
+    }
+
+    private void verifyMessageContains(String expectedText) {
+        org.mockito.ArgumentCaptor<Component> captor = org.mockito.ArgumentCaptor.forClass(Component.class);
+        verify(sender, atLeastOnce()).sendMessage(captor.capture());
+        boolean found = captor.getAllValues().stream()
+                .map(component -> PlainTextComponentSerializer.plainText().serialize(component))
+                .anyMatch(text -> text.contains(expectedText));
+        assertTrue(found, "Expected message containing: " + expectedText);
     }
 }

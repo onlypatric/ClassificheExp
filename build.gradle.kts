@@ -1,5 +1,6 @@
 plugins {
     java
+    id("com.gradleup.shadow") version "9.3.2"
 }
 
 group = "it.patric"
@@ -14,10 +15,12 @@ java {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("me.clip:placeholderapi:2.12.2")
     implementation("com.google.code.gson:gson:2.13.2")
     implementation("com.zaxxer:HikariCP:6.3.3")
     implementation("com.mysql:mysql-connector-j:9.4.0")
@@ -27,6 +30,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.mockito:mockito-core:5.18.0")
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.106.1")
+    testImplementation("me.clip:placeholderapi:2.12.2")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:mysql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -42,6 +46,19 @@ tasks {
                 )
             )
         }
+    }
+
+    jar {
+        archiveClassifier.set("plain")
+    }
+
+    shadowJar {
+        archiveClassifier.set("")
+        mergeServiceFiles()
+    }
+
+    assemble {
+        dependsOn(shadowJar)
     }
 
     withType<JavaCompile> {

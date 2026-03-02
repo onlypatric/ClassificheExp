@@ -24,6 +24,7 @@ Thumbs.db
 # Local runtime folders (Paper/Proxy test runs)
 run/
 runs/
+.paper-local/
 plugins/
 logs/
 world/

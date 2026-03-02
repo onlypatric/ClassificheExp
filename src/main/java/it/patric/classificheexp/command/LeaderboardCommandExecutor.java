@@ -2,6 +2,8 @@ package it.patric.classificheexp.command;
 
 import it.patric.classificheexp.application.LeaderboardService;
 import it.patric.classificheexp.domain.LeaderboardEntry;
+import it.patric.classificheexp.message.MessageService;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -28,17 +30,23 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
     private final LeaderboardService service;
     private final Logger logger;
     private final JavaPlugin plugin;
+    private final MessageService messages;
 
     public LeaderboardCommandExecutor(LeaderboardService service, Logger logger, JavaPlugin plugin) {
+        this(service, logger, plugin, new MessageService(plugin));
+    }
+
+    public LeaderboardCommandExecutor(LeaderboardService service, Logger logger, JavaPlugin plugin, MessageService messages) {
         this.service = Objects.requireNonNull(service, "service cannot be null");
         this.logger = Objects.requireNonNull(logger, "logger cannot be null");
         this.plugin = Objects.requireNonNull(plugin, "plugin cannot be null");
+        this.messages = Objects.requireNonNull(messages, "messages cannot be null");
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission(BASE_PERMISSION)) {
-            sender.sendMessage("Non hai il permesso per usare questo comando.");
+            messages.send(sender, "no_permission.base");
             return true;
         }
 
@@ -55,7 +63,7 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
             case "get" -> handleGet(sender, args);
             case "top" -> handleTop(sender, args);
             default -> {
-                sender.sendMessage("Subcommand non valido.");
+                messages.send(sender, "error.subcommand_invalid");
                 sendUsage(sender);
                 yield true;
             }
@@ -64,31 +72,35 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
 
     private boolean handleAdd(CommandSender sender, String[] args) {
         if (!sender.hasPermission(ADD_PERMISSION)) {
-            sender.sendMessage("Non hai il permesso per usare add.");
+            messages.send(sender, "no_permission.add");
             return true;
         }
         if (args.length != 3) {
-            sender.sendMessage("Uso: /leaderboard add <name> <points>");
+            messages.send(sender, "usage.add");
             return true;
         }
 
         String name = args[1];
         Integer points = parseInteger(args[2]);
         if (points == null || points <= 0) {
-            sender.sendMessage("Il valore points deve essere un intero > 0.");
+            messages.send(sender, "error.points_positive", Placeholder.unparsed("points", "points"));
             return true;
         }
 
+        messages.send(sender, "status.processing");
         service.addScore(name, points).whenComplete((ignored, throwable) -> sendSync(() -> {
             if (throwable != null) {
                 Throwable cause = unwrap(throwable);
                 logger.warning("event=command_async_failed subcommand=add sender=" + sender.getName()
                         + " cause=" + cause.getClass().getSimpleName() + ":" + safeMessage(cause));
-                sender.sendMessage("Operazione fallita, controlla i log.");
+                messages.send(sender, "error.operation_failed");
                 return;
             }
             int total = service.getScore(name);
-            sender.sendMessage("Aggiunti " + points + " punti a " + name + ". Totale: " + total);
+            messages.send(sender, "success.add",
+                    Placeholder.unparsed("points", String.valueOf(points)),
+                    Placeholder.unparsed("name", name),
+                    Placeholder.unparsed("score", String.valueOf(total)));
         }));
 
         return true;
@@ -96,31 +108,35 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
 
     private boolean handleRemove(CommandSender sender, String[] args) {
         if (!sender.hasPermission(REMOVE_PERMISSION)) {
-            sender.sendMessage("Non hai il permesso per usare remove.");
+            messages.send(sender, "no_permission.remove");
             return true;
         }
         if (args.length != 3) {
-            sender.sendMessage("Uso: /leaderboard remove <name> <points>");
+            messages.send(sender, "usage.remove");
             return true;
         }
 
         String name = args[1];
         Integer points = parseInteger(args[2]);
         if (points == null || points <= 0) {
-            sender.sendMessage("Il valore points deve essere un intero > 0.");
+            messages.send(sender, "error.points_positive", Placeholder.unparsed("points", "points"));
             return true;
         }
 
+        messages.send(sender, "status.processing");
         service.removeScore(name, points).whenComplete((ignored, throwable) -> sendSync(() -> {
             if (throwable != null) {
                 Throwable cause = unwrap(throwable);
                 logger.warning("event=command_async_failed subcommand=remove sender=" + sender.getName()
                         + " cause=" + cause.getClass().getSimpleName() + ":" + safeMessage(cause));
-                sender.sendMessage("Operazione fallita, controlla i log.");
+                messages.send(sender, "error.operation_failed");
                 return;
             }
             int total = service.getScore(name);
-            sender.sendMessage("Rimossi " + points + " punti da " + name + ". Totale: " + total);
+            messages.send(sender, "success.remove",
+                    Placeholder.unparsed("points", String.valueOf(points)),
+                    Placeholder.unparsed("name", name),
+                    Placeholder.unparsed("score", String.valueOf(total)));
         }));
 
         return true;
@@ -128,30 +144,33 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
 
     private boolean handleSet(CommandSender sender, String[] args) {
         if (!sender.hasPermission(SET_PERMISSION)) {
-            sender.sendMessage("Non hai il permesso per usare set.");
+            messages.send(sender, "no_permission.set");
             return true;
         }
         if (args.length != 3) {
-            sender.sendMessage("Uso: /leaderboard set <name> <points>");
+            messages.send(sender, "usage.set");
             return true;
         }
 
         String name = args[1];
         Integer points = parseInteger(args[2]);
         if (points == null || points < 0) {
-            sender.sendMessage("Il valore points deve essere un intero >= 0.");
+            messages.send(sender, "error.points_non_negative", Placeholder.unparsed("points", "points"));
             return true;
         }
 
+        messages.send(sender, "status.processing");
         service.setScore(name, points).whenComplete((ignored, throwable) -> sendSync(() -> {
             if (throwable != null) {
                 Throwable cause = unwrap(throwable);
                 logger.warning("event=command_async_failed subcommand=set sender=" + sender.getName()
                         + " cause=" + cause.getClass().getSimpleName() + ":" + safeMessage(cause));
-                sender.sendMessage("Operazione fallita, controlla i log.");
+                messages.send(sender, "error.operation_failed");
                 return;
             }
-            sender.sendMessage("Punteggio di " + name + " impostato a " + points);
+            messages.send(sender, "success.set",
+                    Placeholder.unparsed("name", name),
+                    Placeholder.unparsed("score", String.valueOf(points)));
         }));
 
         return true;
@@ -159,31 +178,33 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
 
     private boolean handleGet(CommandSender sender, String[] args) {
         if (!sender.hasPermission(GET_PERMISSION)) {
-            sender.sendMessage("Non hai il permesso per usare get.");
+            messages.send(sender, "no_permission.get");
             return true;
         }
         if (args.length != 2) {
-            sender.sendMessage("Uso: /leaderboard get <name>");
+            messages.send(sender, "usage.get");
             return true;
         }
 
         String name = args[1];
         try {
             int score = service.getScore(name);
-            sender.sendMessage("Punteggio di " + name + ": " + score);
+            messages.send(sender, "success.get",
+                    Placeholder.unparsed("name", name),
+                    Placeholder.unparsed("score", String.valueOf(score)));
         } catch (IllegalArgumentException ex) {
-            sender.sendMessage("Nome non valido.");
+            messages.send(sender, "error.name_invalid");
         }
         return true;
     }
 
     private boolean handleTop(CommandSender sender, String[] args) {
         if (!sender.hasPermission(TOP_PERMISSION)) {
-            sender.sendMessage("Non hai il permesso per usare top.");
+            messages.send(sender, "no_permission.top");
             return true;
         }
         if (args.length > 2) {
-            sender.sendMessage("Uso: /leaderboard top [n]");
+            messages.send(sender, "usage.top");
             return true;
         }
 
@@ -191,7 +212,7 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
         if (args.length == 2) {
             Integer parsed = parseInteger(args[1]);
             if (parsed == null) {
-                sender.sendMessage("n deve essere un intero.");
+                messages.send(sender, "error.integer", Placeholder.unparsed("field", "n"));
                 return true;
             }
             requested = parsed;
@@ -199,20 +220,24 @@ public final class LeaderboardCommandExecutor implements CommandExecutor {
 
         int limit = Math.max(1, Math.min(MAX_TOP_LIMIT, requested));
         List<LeaderboardEntry> top = service.getTop(limit);
+        messages.send(sender, "top.header", Placeholder.unparsed("limit", String.valueOf(limit)));
         if (top.isEmpty()) {
-            sender.sendMessage("Nessun dato in classifica.");
+            messages.send(sender, "top.empty");
             return true;
         }
 
         for (int i = 0; i < top.size(); i++) {
             LeaderboardEntry entry = top.get(i);
-            sender.sendMessage((i + 1) + ") " + entry.name() + " - " + entry.score());
+            messages.send(sender, "top.line",
+                    Placeholder.unparsed("rank", String.valueOf(i + 1)),
+                    Placeholder.unparsed("name", entry.name()),
+                    Placeholder.unparsed("score", String.valueOf(entry.score())));
         }
         return true;
     }
 
     private void sendUsage(CommandSender sender) {
-        sender.sendMessage("Uso: /leaderboard <add|remove|set|get|top>");
+        messages.send(sender, "usage.root");
     }
 
     private void sendSync(Runnable runnable) {

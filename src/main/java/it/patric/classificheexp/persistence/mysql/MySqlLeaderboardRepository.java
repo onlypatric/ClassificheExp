@@ -136,7 +136,8 @@ public final class MySqlLeaderboardRepository implements LeaderboardRepository {
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(ddl);
         } catch (SQLException ex) {
-            throw new IllegalStateException("Failed to bootstrap MySQL leaderboard table", ex);
+            logger.warning("event=mysql_schema_bootstrap_failed table=" + tableName
+                    + " cause=" + ex.getClass().getSimpleName() + ":" + ex.getMessage());
         }
     }
 

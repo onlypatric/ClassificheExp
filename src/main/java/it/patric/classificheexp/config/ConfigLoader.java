@@ -46,7 +46,15 @@ public final class ConfigLoader {
                 authConfig
         );
 
-        return new PluginConfig(mySqlConfig, fallbackConfig, leaderboardConfig, crossServerConfig);
+        PluginConfig.PlaceholderConfig placeholderConfig = new PluginConfig.PlaceholderConfig(
+                config.getBoolean("placeholders.enabled", true),
+                getStringOrDefault(config, "placeholders.missing-value", "N/A"),
+                getStringOrDefault(config, "placeholders.top-entry-format", "<gray>%rank%)</gray> <yellow>%name%</yellow>: <green>%score%</green>"),
+                getStringOrDefault(config, "placeholders.top-separator", " <dark_gray>|</dark_gray> "),
+                getStringOrDefault(config, "placeholders.top-empty-value", "<gray>Nessun dato in classifica.</gray>")
+        );
+
+        return new PluginConfig(mySqlConfig, fallbackConfig, leaderboardConfig, crossServerConfig, placeholderConfig);
     }
 
     private static String getRequiredString(FileConfiguration config, String path) {

@@ -7,7 +7,8 @@ public record PluginConfig(
         MySqlConfig mysql,
         FallbackConfig fallback,
         LeaderboardConfig leaderboard,
-        CrossServerConfig crossServer
+        CrossServerConfig crossServer,
+        PlaceholderConfig placeholders
 ) {
 
     public PluginConfig {
@@ -15,6 +16,7 @@ public record PluginConfig(
         Objects.requireNonNull(fallback, "fallback config cannot be null");
         Objects.requireNonNull(leaderboard, "leaderboard config cannot be null");
         Objects.requireNonNull(crossServer, "crossServer config cannot be null");
+        Objects.requireNonNull(placeholders, "placeholders config cannot be null");
     }
 
     public record MySqlConfig(String host, int port, String database, String username, String password, String table) {
@@ -91,6 +93,21 @@ public record PluginConfig(
             if (nonceTtlMs <= 0) {
                 throw new IllegalArgumentException("cross-server.auth.nonce-ttl-ms must be > 0");
             }
+        }
+    }
+
+    public record PlaceholderConfig(
+            boolean enabled,
+            String missingValue,
+            String topEntryFormat,
+            String topSeparator,
+            String topEmptyValue
+    ) {
+        public PlaceholderConfig {
+            Objects.requireNonNull(missingValue, "placeholders.missing-value cannot be null");
+            Objects.requireNonNull(topEntryFormat, "placeholders.top-entry-format cannot be null");
+            Objects.requireNonNull(topSeparator, "placeholders.top-separator cannot be null");
+            Objects.requireNonNull(topEmptyValue, "placeholders.top-empty-value cannot be null");
         }
     }
 

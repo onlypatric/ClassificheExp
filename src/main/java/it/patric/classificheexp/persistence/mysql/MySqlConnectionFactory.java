@@ -21,10 +21,14 @@ public final class MySqlConnectionFactory implements AutoCloseable {
             hikariConfig.setPassword(config.password());
             hikariConfig.setPoolName("ClassificheExp-MySQL");
             hikariConfig.setMaximumPoolSize(10);
-            hikariConfig.setMinimumIdle(1);
+            // Keep 0 idle connections so MySQL-down scenarios don't continuously spam logs
+            // while the plugin is operating in YML fallback mode.
+            hikariConfig.setMinimumIdle(0);
             hikariConfig.setConnectionTimeout(10_000);
             hikariConfig.setValidationTimeout(5_000);
-            hikariConfig.setInitializationFailTimeout(1);
+            // Do not fail plugin startup if MySQL is temporarily unavailable.
+            // StorageCoordinator will handle degraded mode and fallback to YML.
+            hikariConfig.setInitializationFailTimeout(-1);
 
             this.dataSource = new HikariDataSource(hikariConfig);
         } catch (RuntimeException ex) {

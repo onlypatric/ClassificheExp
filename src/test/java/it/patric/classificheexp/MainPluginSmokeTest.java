@@ -6,7 +6,7 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MainPluginSmokeTest {
 
@@ -18,12 +18,12 @@ class MainPluginSmokeTest {
     }
 
     @Test
-    void pluginShouldFailFastWithoutMySqlInMockEnvironment() {
+    void pluginShouldEnableAndRegisterCommandWithoutRealPaperServer() {
         server = MockBukkit.mock();
 
         Main plugin = MockBukkit.load(Main.class);
 
-        assertFalse(plugin.isEnabled());
+        assertTrue(plugin.isEnabled());
         assertNotNull(server.getPluginCommand("leaderboard"));
     }
 }

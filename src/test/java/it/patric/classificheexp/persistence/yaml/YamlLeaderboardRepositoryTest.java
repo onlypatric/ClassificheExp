@@ -171,6 +171,13 @@ class YamlLeaderboardRepositoryTest {
                         "classificheexp:bridge",
                         3_000,
                         new PluginConfig.AuthConfig("change-me-long-random-change-me-long-random", 30_000, 120_000, true)
+                ),
+                new PluginConfig.PlaceholderConfig(
+                        true,
+                        "N/A",
+                        "<gray>%rank%)</gray> <yellow>%name%</yellow>: <green>%score%</green>",
+                        " <dark_gray>|</dark_gray> ",
+                        "<gray>Nessun dato in classifica.</gray>"
                 )
         );
     }

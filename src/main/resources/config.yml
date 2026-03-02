@@ -20,3 +20,43 @@ cross-server:
     max-clock-skew-ms: 30000
     nonce-ttl-ms: 120000
     reject-unsigned: true
+placeholders:
+  enabled: true
+  missing-value: "N/A"
+  top-entry-format: "<gray>%rank%)</gray> <yellow>%name%</yellow>: <green>%score%</green>"
+  top-separator: " <dark_gray>|</dark_gray> "
+  top-empty-value: "<gray>Nessun dato in classifica.</gray>"
+messages:
+  prefix: "<gray>[<gold>ClassificheExp</gold>]</gray>"
+  no_permission:
+    base: "<prefix> <red>Non hai il permesso per usare questo comando.</red>"
+    add: "<prefix> <red>Non hai il permesso per usare <white>add</white>.</red>"
+    remove: "<prefix> <red>Non hai il permesso per usare <white>remove</white>.</red>"
+    set: "<prefix> <red>Non hai il permesso per usare <white>set</white>.</red>"
+    get: "<prefix> <red>Non hai il permesso per usare <white>get</white>.</red>"
+    top: "<prefix> <red>Non hai il permesso per usare <white>top</white>.</red>"
+  usage:
+    root: "<prefix> <yellow>Uso:</yellow> <white>/leaderboard <add|remove|set|get|top></white>"
+    add: "<prefix> <yellow>Uso:</yellow> <white>/leaderboard add <name> <points></white>"
+    remove: "<prefix> <yellow>Uso:</yellow> <white>/leaderboard remove <name> <points></white>"
+    set: "<prefix> <yellow>Uso:</yellow> <white>/leaderboard set <name> <points></white>"
+    get: "<prefix> <yellow>Uso:</yellow> <white>/leaderboard get <name></white>"
+    top: "<prefix> <yellow>Uso:</yellow> <white>/leaderboard top [n]</white>"
+  error:
+    subcommand_invalid: "<prefix> <red>Subcommand non valido.</red>"
+    points_positive: "<prefix> <red><points> deve essere un intero <white>> 0</white>.</red>"
+    points_non_negative: "<prefix> <red><points> deve essere un intero <white>>= 0</white>.</red>"
+    integer: "<prefix> <red><field> deve essere un intero.</red>"
+    name_invalid: "<prefix> <red>Nome non valido.</red>"
+    operation_failed: "<prefix> <red>Operazione fallita, controlla i log.</red>"
+  status:
+    processing: "<prefix> <yellow>Operazione in corso...</yellow>"
+  success:
+    add: "<prefix> <green>Aggiunti <points> punti a <name>. Totale: <score></green>"
+    remove: "<prefix> <green>Rimossi <points> punti da <name>. Totale: <score></green>"
+    set: "<prefix> <green>Punteggio di <name> impostato a <score>.</green>"
+    get: "<prefix> <aqua>Punteggio di <name>: <score></aqua>"
+  top:
+    header: "<prefix> <gold>Top <limit></gold>"
+    empty: "<prefix> <yellow>Nessun dato in classifica.</yellow>"
+    line: "<gray><rank>)</gray> <yellow><name></yellow> <white>-</white> <green><score></green>"

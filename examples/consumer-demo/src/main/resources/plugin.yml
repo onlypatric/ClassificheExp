@@ -1,0 +1,17 @@
+name: ClassificheExpConsumerDemo
+version: ${version}
+main: it.patric.classificheexpdemo.ClassificheExpConsumerDemoPlugin
+api-version: "1.21"
+authors: [Patric]
+description: Plugin demo consumer per testare l'integrazione API di ClassificheExp.
+depend: [ClassificheExp]
+commands:
+  classificaexpdemo:
+    description: Esegue uno smoke test sull'API di ClassificheExp
+    usage: /classificaexpdemo smoke
+    permission: classificheexpdemo.command
+permissions:
+  classificheexpdemo.command:
+    description: Permette l'esecuzione del comando demo
+    default: op
+
