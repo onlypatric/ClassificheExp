@@ -1,0 +1,22 @@
+mysql:
+  host: localhost
+  port: 3306
+  database: minecraft
+  username: root
+  password: change-me
+  table: leaderboard
+fallback:
+  enabled: true
+leaderboard:
+  default-name: global
+cross-server:
+  enabled: false
+  provider: proxy-messaging
+  server-id: survival-1
+  channel: classificheexp:bridge
+  request-timeout-ms: 3000
+  auth:
+    shared-key: change-me-long-random-change-me-long-random
+    max-clock-skew-ms: 30000
+    nonce-ttl-ms: 120000
+    reject-unsigned: true

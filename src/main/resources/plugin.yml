@@ -1,0 +1,30 @@
+name: ClassificheExp
+version: ${version}
+main: it.patric.classificheexp.Main
+api-version: '1.21'
+authors: [Patric]
+description: Plugin leaderboard con MySQL primario e fallback YML.
+commands:
+  leaderboard:
+    description: Gestione classifiche
+    usage: /leaderboard <add|remove|set|get|top>
+    permission: classificheexp.command.leaderboard
+permissions:
+  classificheexp.command.leaderboard:
+    description: Permette l'accesso base al comando /leaderboard
+    default: op
+  classificheexp.command.leaderboard.add:
+    description: Permette /leaderboard add
+    default: op
+  classificheexp.command.leaderboard.remove:
+    description: Permette /leaderboard remove
+    default: op
+  classificheexp.command.leaderboard.set:
+    description: Permette /leaderboard set
+    default: op
+  classificheexp.command.leaderboard.get:
+    description: Permette /leaderboard get
+    default: op
+  classificheexp.command.leaderboard.top:
+    description: Permette /leaderboard top
+    default: op
