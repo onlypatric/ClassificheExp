@@ -4,7 +4,8 @@ plugins {
 }
 
 group = "it.patric"
-version = "0.1.0-SNAPSHOT"
+version = (findProperty("pluginVersion") as String?) ?: "0.1.0-SNAPSHOT"
+val classificheExpVersion = (findProperty("classificheexpVersion") as String?) ?: "0.1.0-SNAPSHOT"
 
 java {
     toolchain {
@@ -19,7 +20,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    compileOnly(files("../../build/libs/ClassificheExp-0.1.0-SNAPSHOT.jar"))
+    compileOnly(files("../../build/libs/ClassificheExp-$classificheExpVersion.jar"))
 }
 
 tasks {
@@ -47,4 +48,3 @@ tasks {
         options.release.set(21)
     }
 }
-

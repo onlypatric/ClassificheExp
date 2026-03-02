@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "it.patric"
-version = "0.1.0-SNAPSHOT"
+version = (findProperty("pluginVersion") as String?) ?: "0.1.0-SNAPSHOT"
 
 java {
     toolchain {

@@ -1,0 +1,114 @@
+name: CI and Release
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-smoke:
+    name: Build, Test, Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 22
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "22"
+          cache: gradle
+
+      - name: Ensure scripts are executable
+        run: chmod +x scripts/*.sh gradlew
+
+      - name: Run unit/integration tests
+        run: ./gradlew test --no-daemon
+
+      - name: Build ClassificheExp jar
+        run: ./gradlew shadowJar --no-daemon
+
+      - name: Build consumer demo jar
+        run: ./gradlew -p examples/consumer-demo shadowJar --no-daemon
+
+      - name: Run Paper timed smoke test
+        env:
+          BUILD_PLUGINS: "0"
+          STARTUP_TIMEOUT_SEC: "180"
+          POST_READY_RUN_SEC: "1"
+          SMOKE_TIMEOUT_SEC: "90"
+          SMOKE_COMMAND: "classificaexpdemo smoke"
+          SMOKE_SUCCESS_PATTERN: "DEMO_SMOKE_OK score=15"
+        run: ./scripts/start-paper-timed.sh
+
+      - name: Upload plugin jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: classificheexp-jars
+          path: |
+            build/libs/ClassificheExp-*.jar
+            examples/consumer-demo/build/libs/classificheexp-consumer-demo-*.jar
+          if-no-files-found: error
+
+      - name: Upload Paper smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-smoke-logs
+          path: .paper-local/server-console.log
+          if-no-files-found: warn
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-test-smoke
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 22
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "22"
+          cache: gradle
+
+      - name: Resolve release version from tag
+        run: |
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-].+)?$ ]]; then
+            echo "Tag non valido: ${GITHUB_REF_NAME}. Atteso formato vX.Y.Z"
+            exit 1
+          fi
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
+          echo "Release version: $RELEASE_VERSION"
+
+      - name: Build release jars
+        run: |
+          chmod +x gradlew
+          ./gradlew shadowJar --no-daemon -PpluginVersion="$RELEASE_VERSION"
+          ./gradlew -p examples/consumer-demo shadowJar --no-daemon \
+            -PpluginVersion="$RELEASE_VERSION" \
+            -PclassificheexpVersion="$RELEASE_VERSION"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/libs/ClassificheExp-*.jar
+            examples/consumer-demo/build/libs/classificheexp-consumer-demo-*.jar
